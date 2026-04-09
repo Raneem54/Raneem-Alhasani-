@@ -1,10 +1,16 @@
-grades= 0
 total=0
-count=0
-while grades >= 0:
-    grades= float(input("Enter a graade or -1 to finish: "))
-    if grades >= 0:
-        total = total+grades
-        count= count +1
-average=total/count
-print(average)
+average=0
+while True:
+ examNum=int(input("How many exam grades each student have? "))
+ if examNum>0:
+  for i in range(examNum):
+    examGrade=float(input("Enter the exam grades: ")) 
+    total=total+examGrade
+  average=total/examNum
+  print("The average is ",average)
+ anotherStud=input("Enter exam grades for another student(y/n)? ").lower()
+ if anotherStud != "y":
+  break
+   
+
+
