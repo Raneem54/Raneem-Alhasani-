@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ATM System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --sky: #dce9f5;
+      --mid: #b8d0ec;
+      --card: rgba(255,255,255,0.55);
+      --border: rgba(255,255,255,0.75);
+      --text: #ffffff;
+      --text-dark: #1a2b45;
+      --accent: #3b82f6;
+      --accent2: #06b6d4;
+      --green: #10b981;
+      --red: #f43f5e;
+      --shadow: 0 8px 32px rgba(59,130,246,0.18);
+      --glow-blue: 0 0 18px rgba(59,130,246,0.55), 0 0 40px rgba(59,130,246,0.25);
+      --glow-green: 0 0 18px rgba(16,185,129,0.6), 0 0 40px rgba(16,185,129,0.25);
+      --glow-red: 0 0 18px rgba(244,63,94,0.55), 0 0 40px rgba(244,63,94,0.25);
+      --glow-cyan: 0 0 18px rgba(6,182,212,0.55), 0 0 40px rgba(6,182,212,0.25);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #dce9f5 0%, #b8d5f0 40%, #cde3fa 80%, #e0eeff 100%);
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Floating orbs for light theme depth */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%);
+      top: -120px; left: -120px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: drift 8s ease-in-out infinite alternate;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%);
+      bottom: -80px; right: -80px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: drift 10s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(30px,30px) scale(1.08); }
+    }
+
+    .atm-wrap {
+      position: relative;
+      z-index: 10;
+      width: 420px;
+      animation: slideUp 0.7s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.62), rgba(200,225,255,0.42));
+      border: 1.5px solid var(--border);
+      border-radius: 28px;
+      padding: 40px 36px 36px;
+      backdrop-filter: blur(22px);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    /* ── LOGO / HEADER ── */
+    .atm-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+    .atm-icon {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--glow-blue);
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .atm-title { line-height: 1.1; }
+    .atm-title h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      letter-spacing: -0.5px;
+    }
+    .atm-title p {
+      font-size: 0.78rem;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    /* ── SCREEN (status log) ── */
+    .screen {
+      background: linear-gradient(160deg, #1a2b45, #0f1e36);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+      min-height: 68px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: inset 0 2px 12px rgba(0,0,0,0.3), 0 4px 20px rgba(30,60,100,0.18);
+      border: 1px solid rgba(59,130,246,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    .screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(59,130,246,0.03) 3px, rgba(59,130,246,0.03) 4px
+      );
+      pointer-events: none;
+    }
+    .screen-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: rgba(100,160,255,0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .screen-msg {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.95rem;
+      color: #a5d4ff;
+      letter-spacing: 0.5px;
+      transition: all 0.3s;
+    }
+    .screen-msg.success { color: #6ee7b7; }
+    .screen-msg.error   { color: #fca5a5; }
+    .screen-balance {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'Share Tech Mono', monospace;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* ── SECTIONS ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── INPUTS ── */
+    .input-group {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .input-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      opacity: 0.7;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(59,130,246,0.25);
+      background: rgba(255,255,255,0.7);
+      color: var(--text-dark);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-group input::placeholder { color: rgba(30,60,100,0.3); }
+    .input-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15), var(--glow-blue);
+      background: rgba(255,255,255,0.9);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      transition: transform 0.15s, box-shadow 0.25s, filter 0.25s;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-blue {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      box-shadow: var(--glow-blue), 0 4px 14px rgba(59,130,246,0.3);
+    }
+    .btn-blue:hover { box-shadow: 0 0 28px rgba(59,130,246,0.75), 0 0 60px rgba(59,130,246,0.3), 0 4px 14px rgba(59,130,246,0.35); filter: brightness(1.07); }
+
+    .btn-green {
+      background: linear-gradient(135deg, #059669, #10b981);
+      box-shadow: var(--glow-green), 0 4px 14px rgba(16,185,129,0.3);
+    }
+    .btn-green:hover { box-shadow: 0 0 28px rgba(16,185,129,0.75), 0 0 60px rgba(16,185,129,0.3); filter: brightness(1.07); }
+
+    .btn-red {
+      background: linear-gradient(135deg, #e11d48, #f43f5e);
+      box-shadow: var(--glow-red), 0 4px 14px rgba(244,63,94,0.3);
+    }
+    .btn-red:hover { box-shadow: 0 0 28px rgba(244,63,94,0.75), 0 0 60px rgba(244,63,94,0.3); filter: brightness(1.07); }
+
+    .btn-cyan {
+      background: linear-gradient(135deg, #0891b2, #06b6d4);
+      box-shadow: var(--glow-cyan), 0 4px 14px rgba(6,182,212,0.3);
+    }
+    .btn-cyan:hover { box-shadow: 0 0 28px rgba(6,182,212,0.75), 0 0 60px rgba(6,182,212,0.3); filter: brightness(1.07); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.45);
+      color: var(--text-dark);
+      border: 1.5px solid rgba(59,130,246,0.2);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.7); box-shadow: 0 4px 20px rgba(59,130,246,0.15); }
+
+    .btn + .btn { margin-top: 10px; }
+
+    /* ── SERVICE GRID ── */
+    .service-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .service-btn {
+      padding: 22px 14px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s, box-shadow 0.25s, filter 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .service-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .service-btn:active { transform: scale(0.96); }
+    .service-btn .sicon { font-size: 1.8rem; }
+
+    .sb-balance {
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      box-shadow: var(--glow-blue);
+      grid-column: span 2;
+    }
+    .sb-balance:hover { box-shadow: 0 0 32px rgba(59,130,246,0.7), 0 0 60px rgba(59,130,246,0.3); filter: brightness(1.05); }
+
+    .sb-deposit {
+      background: linear-gradient(135deg, #059669, #10b981);
+      box-shadow: var(--glow-green);
+    }
+    .sb-deposit:hover { box-shadow: 0 0 32px rgba(16,185,129,0.7), 0 0 60px rgba(16,185,129,0.3); filter: brightness(1.05); }
+
+    .sb-withdraw {
+      background: linear-gradient(135deg, #e11d48, #f43f5e);
+      box-shadow: var(--glow-red);
+    }
+    .sb-withdraw:hover { box-shadow: 0 0 32px rgba(244,63,94,0.7), 0 0 60px rgba(244,63,94,0.3); filter: brightness(1.05); }
+
+    /* ── AMOUNT INPUT PANEL ── */
+    .amount-panel {
+      background: rgba(255,255,255,0.5);
+      border: 1.5px solid rgba(59,130,246,0.15);
+      border-radius: 18px;
+      padding: 22px 20px;
+      margin-bottom: 16px;
+    }
+    .amount-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      opacity: 0.6;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .amount-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .currency-badge {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      opacity: 0.5;
+    }
+    #amountInput {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      outline: none;
+      width: 100%;
+    }
+    #amountInput::placeholder { color: rgba(30,60,100,0.2); }
+
+    /* quick amounts */
+    .quick-amounts {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .qa-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(59,130,246,0.25);
+      background: rgba(255,255,255,0.6);
+      color: var(--text-dark);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .qa-btn:hover {
+      background: rgba(59,130,246,0.12);
+      border-color: var(--accent);
+      box-shadow: 0 0 10px rgba(59,130,246,0.2);
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0;
+      color: rgba(30,60,100,0.3);
+      font-size: 0.72rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(59,130,246,0.15);
+    }
+
+    /* ── FOOTER ── */
+    .atm-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.72rem;
+      color: rgba(30,60,100,0.4);
+      font-family: 'Share Tech Mono', monospace;
+      letter-spacing: 1px;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .section.active { animation: fadeIn 0.3s ease both; }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: var(--glow-blue), 0 4px 14px rgba(59,130,246,0.3); }
+      50%       { box-shadow: 0 0 36px rgba(59,130,246,0.8), 0 0 70px rgba(59,130,246,0.4), 0 4px 14px rgba(59,130,246,0.4); }
+    }
+
+    .balance-visible .btn-blue { animation: pulse-glow 2.5s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+
+<div class="atm-wrap">
+  <div class="card">
+
+    <!-- Header -->
+    <div class="atm-header">
+      <div class="atm-icon">🏦</div>
+      <div class="atm-title">
+        <h1>NovBank ATM</h1>
+        <p>Secure Terminal v2.0</p>
+      </div>
+    </div>
+
+    <!-- Screen -->
+    <div class="screen">
+      <div class="screen-label">■ Status</div>
+      <div class="screen-msg" id="screenMsg">Insert credentials to continue...</div>
+      <div class="screen-balance" id="screenBalance" style="display:none"></div>
+    </div>
+
+    <!-- LOGIN SECTION -->
+    <div class="section active" id="loginSection">
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="usernameInput" placeholder="Enter username" autocomplete="off"/>
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="off"/>
+      </div>
+      <button class="btn btn-blue" onclick="doLogin()">Login →</button>
+    </div>
+
+    <!-- DASHBOARD SECTION -->
+    <div class="section" id="dashSection">
+      <div class="service-grid">
+        <button class="service-btn sb-balance" onclick="checkBalance()">
+          <span class="sicon">💳</span>
+          Check Balance
+        </button>
+        <button class="service-btn sb-deposit" onclick="showDeposit()">
+          <span class="sicon">⬆️</span>
+          Deposit
+        </button>
+        <button class="service-btn sb-withdraw" onclick="showWithdraw()">
+          <span class="sicon">⬇️</span>
+          Withdraw
+        </button>
+      </div>
+      <button class="btn btn-ghost" onclick="doLogout()">⏏ Logout</button>
+    </div>
+
+    <!-- DEPOSIT SECTION -->
+    <div class="section" id="depositSection">
+      <div class="amount-panel">
+        <div class="amount-label">Deposit Amount</div>
+        <div class="amount-input-wrap">
+          <span class="currency-badge">$</span>
+          <input type="number" id="amountInput" placeholder="0.00" min="1"/>
+        </div>
+        <div class="quick-amounts">
+          <button class="qa-btn" onclick="setAmount(100)">100</button>
+          <button class="qa-btn" onclick="setAmount(500)">500</button>
+          <button class="qa-btn" onclick="setAmount(1000)">1,000</button>
+          <button class="qa-btn" onclick="setAmount(5000)">5,000</button>
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="doDeposit()">⬆ Confirm Deposit</button>
+      <div class="divider">or</div>
+      <button class="btn btn-ghost" onclick="showDash()">← Back</button>
+    </div>
+
+    <!-- WITHDRAW SECTION -->
+    <div class="section" id="withdrawSection">
+      <div class="amount-panel">
+        <div class="amount-label">Withdrawal Amount</div>
+        <div class="amount-input-wrap">
+          <span class="currency-badge">$</span>
+          <input type="number" id="wAmountInput" placeholder="0.00" min="1"/>
+        </div>
+        <div class="quick-amounts">
+          <button class="qa-btn" onclick="setWAmount(100)">100</button>
+          <button class="qa-btn" onclick="setWAmount(500)">500</button>
+          <button class="qa-btn" onclick="setWAmount(1000)">1,000</button>
+          <button class="qa-btn" onclick="setWAmount(5000)">5,000</button>
+        </div>
+      </div>
+      <button class="btn btn-red" onclick="doWithdraw()">⬇ Confirm Withdrawal</button>
+      <div class="divider">or</div>
+      <button class="btn btn-ghost" onclick="showDash()">← Back</button>
+    </div>
+
+  </div>
+  <div class="atm-footer">PROTECTED · 256-BIT SSL · FDIC INSURED</div>
+</div>
+
+<script>
+  // ── State ──
+  let balance = 10000;
+  const VALID_USER = 'admin';
+  const VALID_PASS = '1234';
+
+  // ── Helpers ──
+  function fmt(n) { return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  function setScreen(msg, type = '', showBal = false) {
+    const el = document.getElementById('screenMsg');
+    const bal = document.getElementById('screenBalance');
+    el.textContent = msg;
+    el.className = 'screen-msg' + (type ? ' ' + type : '');
+    if (showBal) {
+      bal.style.display = 'block';
+      bal.textContent = '$ ' + fmt(balance);
+    } else {
+      bal.style.display = 'none';
+    }
+  }
+
+  function showSection(id) {
+    ['loginSection','dashSection','depositSection','withdrawSection'].forEach(s => {
+      document.getElementById(s).classList.remove('active');
+    });
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── Login ──
+  function doLogin() {
+    const u = document.getElementById('usernameInput').value.trim();
+    const p = document.getElementById('passwordInput').value.trim();
+    if (u === VALID_USER && p === VALID_PASS) {
+      setScreen('Welcome back, ' + u.toUpperCase() + '! ✓', 'success');
+      showSection('dashSection');
+    } else {
+      setScreen('Access Denied — Invalid credentials ✗', 'error');
+      document.getElementById('passwordInput').value = '';
+    }
+  }
+
+  // ── Logout ──
+  function doLogout() {
+    document.getElementById('usernameInput').value = '';
+    document.getElementById('passwordInput').value = '';
+    setScreen('Session ended. Insert credentials to continue...');
+    showSection('loginSection');
+  }
+
+  // ── Check Balance ──
+  function checkBalance() {
+    setScreen('Current Account Balance:', 'success', true);
+    document.querySelector('.card').classList.add('balance-visible');
+    setTimeout(() => document.querySelector('.card').classList.remove('balance-visible'), 3000);
+  }
+
+  // ── Deposit ──
+  function showDeposit() {
+    document.getElementById('amountInput').value = '';
+    setScreen('Enter amount to deposit ⬆', '');
+    showSection('depositSection');
+  }
+
+  function setAmount(v) { document.getElementById('amountInput').value = v; }
+
+  function doDeposit() {
+    const amt = parseFloat(document.getElementById('amountInput').value);
+    if (!amt || amt <= 0) { setScreen('Invalid amount — please enter a positive value ✗', 'error'); return; }
+    balance += amt;
+    setScreen('Deposit successful! +$' + fmt(amt) + ' ✓', 'success', true);
+    showSection('dashSection');
+  }
+
+  // ── Withdraw ──
+  function showWithdraw() {
+    document.getElementById('wAmountInput').value = '';
+    setScreen('Enter amount to withdraw ⬇', '');
+    showSection('withdrawSection');
+  }
+
+  function setWAmount(v) { document.getElementById('wAmountInput').value = v; }
+
+  function doWithdraw() {
+    const amt = parseFloat(document.getElementById('wAmountInput').value);
+    if (!amt || amt <= 0) { setScreen('Invalid amount — please enter a positive value ✗', 'error'); return; }
+    if (amt > balance) { setScreen('Insufficient funds — balance is $' + fmt(balance) + ' ✗', 'error'); return; }
+    balance -= amt;
+    setScreen('Withdrawal successful! -$' + fmt(amt) + ' ✓', 'success', true);
+    showSection('dashSection');
+  }
+
+  function showDash() { setScreen('Choose a service below ↓'); showSection('dashSection'); }
+
+  // ── Enter key support ──
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('usernameInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('passwordInput').focus(); });
+</script>
+
+</body>
+</html>
